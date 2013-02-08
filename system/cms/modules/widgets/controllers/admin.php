@@ -11,7 +11,7 @@ class Admin extends Admin_Controller {
 
 	/**
 	 * The current active section
-	 * @access protected
+	 * 
 	 * @var string
 	 */
 	protected $section = 'instances';
@@ -51,8 +51,7 @@ class Admin extends Admin_Controller {
 		$data = array();
 
 		// Get Widgets
-		$this->db->where('enabled', 1)->order_by('order');
-		$data['available_widgets'] = $this->widget_m->get_all();
+		$data['available_widgets'] = $this->widget_m->findManyByEnabled(true);
 
 		// Get Areas
 		$this->db->order_by('`title`');

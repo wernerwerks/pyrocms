@@ -1,20 +1,20 @@
-<?php defined('BASEPATH') OR exit('No direct script access allowed');
+<?php namespace Pyro\Module\Widgets\Model;
+
 /**
  * Model to handle widgets
  *
- * @author		Phil Sturgeon
  * @author		PyroCMS Dev Team
  * @package		PyroCMS\Core\Modules\Widgets\Models
  */
-class Widget_m extends MY_Model
+class Widget extends \Illuminate\Database\Eloquent\Model
 {
-	public function __construct()
-	{
-		parent::__construct();
-
-		$this->load->helper('date');
-	}
-
+	/**
+	 * Get Instance
+	 *
+	 * @param integer $id Widget instance id
+	 *
+	 * @return Widget
+	 */
 	public function get_instance($id)
 	{
 		$this->db
@@ -34,7 +34,14 @@ class Widget_m extends MY_Model
 		return $result;
 	}
 
-	public function findByArea($slug)
+	/**
+	 * Find by Area
+	 *
+	 * @param string $slug Slug of the widget area
+	 *
+	 * @return Page
+	 */
+	public static function findManyByArea($slug)
 	{
 		$this->db
 			->select('wi.id, w.slug, wi.id as instance_id, wi.title as instance_title, w.title, wi.widget_area_id, wa.slug as widget_area_slug, wi.options')
@@ -54,7 +61,41 @@ class Widget_m extends MY_Model
 		return $result;
 	}
 
-	public function findByAreas($slug = array())
+	/**
+	 * Find by Enabled
+	 *
+	 * @param bool $is_enabled Enabled is default, send false for disabled widgets
+	 *
+	 * @return array
+	 */
+	public function findManyByEnabled($is_enabled = true)
+	{
+		$this->db
+			->select('wi.id, w.slug, wi.id as instance_id, wi.title as instance_title, w.title, wi.widget_area_id, wa.slug as widget_area_slug, wi.options')
+			->from('widget_areas wa')
+			->join('widget_instances wi', 'wa.id = wi.widget_area_id')
+			->join('widgets w', 'wi.widget_id = w.id')
+			->where('wa.slug', $slug)
+			->order_by('wi.order');
+
+		$result = $this->db->get()->result();
+
+		if ($result)
+		{
+			array_map(array($this, 'unserialize_fields'), $result);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Find page by id and status
+	 *
+	 * @param string $status Live or draft?
+	 *
+	 * @return array
+	 */
+	public function findManyByAreas($slug = array())
 	{
 
 		if ( ! (is_array($slug) && $slug))
