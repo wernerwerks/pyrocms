@@ -13,9 +13,11 @@ class Plugin_Pages extends Plugin
 	public $version = '1.0.0';
 	public $name = array(
 		'en' => 'Pages',
+            'fa' => 'صفحه ها',
 	);
 	public $description = array(
 		'en' => 'Output page data or build a list of pages in a page tree.',
+            'fa'=> 'محتویات صفحه را نشان دهید و یا ساختار درختی صفحات را نمایش دهید'
 	);
 
 	/**
@@ -105,7 +107,7 @@ class Plugin_Pages extends Plugin
 					'limit' => array(
 						'type' => 'number',
 						'flags' => '',
-						'default' => '10',
+						'default' => '',
 						'required' => false,
 					),
 					'offset' => array(
@@ -402,7 +404,7 @@ class Plugin_Pages extends Plugin
 	 */
 	public function children()
 	{
-		$limit			= $this->attribute('limit', 10);
+		$limit			= $this->attribute('limit', null);
 		$offset			= $this->attribute('offset');
 		$order_by 		= $this->attribute('order-by', 'order');
 		$order_dir 		= $this->attribute('order-dir', 'ASC');

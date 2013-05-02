@@ -7,7 +7,7 @@
  */
 class Pages extends Public_Controller
 {
-
+	
 	/**
 	 * Constructor method
 	 */
@@ -202,13 +202,15 @@ class Pages extends Public_Controller
 		$meta_title = ($page->meta_title ? $page->meta_title : $page->layout->meta_title);
 		$meta_description = ($page->meta_description ? $page->meta_description : $page->layout->meta_description);
 		$meta_keywords = '';
-		if ($page->meta_keywords or $page->layout->meta_description)
+		if ($page->meta_keywords or $page->layout->meta_keywords)
 		{
 			$meta_keywords = $page->meta_keywords ?
 								Keywords::get_string($page->meta_keywords) :
 								Keywords::get_string($page->layout->meta_keywords);
 		}
 
+		$meta_robots = $page->meta_robots_no_index ? 'noindex' : 'index';
+		$meta_robots .= $page->meta_robots_no_follow ? ',nofollow' : ',follow';
 		// They will be parsed later, when they are set for the template library.
 
 		// Not got a meta title? Use slogan for homepage or the normal page title for other pages
@@ -217,16 +219,15 @@ class Pages extends Public_Controller
 			$meta_title = $page->is_home ? $this->settings->site_slogan : $page->title;
 		}
 
-		// ---------------------------------
-
-		// We do this before parsing the page contents so that
-		// title, meta, & breadcrumbs can be overridden with tags in the page content
+		// Set the title, keywords, description, and breadcrumbs.
 		$this->template->title($this->parser->parse_string($meta_title, $page, true))
 			->set_metadata('keywords', $this->parser->parse_string($meta_keywords, $page, true))
+			->set_metadata('robots', $meta_robots)
 			->set_metadata('description', $this->parser->parse_string($meta_description, $page, true))
 			->set_breadcrumb($page->title);
 
-		// make it possible to use {{ asset:inline_css }} #foo { color: red } {{ /asset:inline_css }}
+		// Parse the CSS so we can use tags like {{ asset:inline_css }}
+		// #foo {color: red} {{ /asset:inline_css }}
 		// to output css via the {{ asset:render_inline_css }} tag. This is most useful for JS
 		$css = $this->parser->parse_string($page->layout->css.$page->css, $this, true);
 
@@ -240,6 +241,7 @@ class Pages extends Public_Controller
 		}
 
 		$js = $this->parser->parse_string($page->layout->js.$page->js, $this, true);
+		
 		// Add our page and page layout JS
 		if ($js)
 		{
@@ -262,14 +264,6 @@ class Pages extends Public_Controller
 			));
 		}
 
-		if ($page->slug == '404')
-		{
-			log_message('error', 'Page Missing: '.$this->uri->uri_string());
-
-			// things behave a little differently when called by MX from MY_Exceptions' show_404()
-			exit($this->template->build('pages/page', array('page' => $page), false, false));
-		}
-
 		// Get our stream.
 		$stream = $this->streams_m->get_stream($page->layout->stream_id);
 
@@ -280,14 +274,24 @@ class Pages extends Public_Controller
 		// Parse our view file. The view file is nothing
 		// more than an echo of $page->layout->body and the
 		// comments after it (if the page has comments).
-		$html = $this->template->load_view('pages/page', array('page' => $page), true);
+		$html = $this->template->load_view('pages/page', array('page' => $page), false);
 
 		$view = $this->parser->parse_string($html, $page, true, false, array(
 			'stream' => $stream->stream_slug,
-			'namespace' => $stream->stream_namespace
+			'namespace' => $stream->stream_namespace,
+			'id_name' => 'entry_id'
 		));
 
-		$this->template->build($view, array('page' => $page), false, false, true, $template);
+		if ($page->slug == '404')
+		{
+			log_message('error', 'Page Missing: '.$this->uri->uri_string());
+
+			// things behave a little differently when called by MX from MY_Exceptions' show_404()
+			exit($this->template->build($view, array('page' => $page), false, false, true, $template));
+		}
+
+		$this->template
+					->build($view, array('page' => $page), false, false, true, $template);
 	}
 
     // --------------------------------------------------------------------------
